@@ -1,5 +1,5 @@
-# RoadToFortune
-Road To Fortune
+# WayToFortune
+Way To Fortune
 
 Stages:
 
