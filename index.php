@@ -1,14 +1,143 @@
+<?php
+session_start();
+ 
+if(isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true){
+    header("location: game.php");
+    exit;
+}
+
+require_once 'connect.php';
+
+// Define variables and initialize with empty values
+$username = $password = "";
+$username_err = $password_err = "";
+ 
+// Processing form data when form is submitted
+if($_SERVER["REQUEST_METHOD"] == "POST"){
+ 
+    // Check if username is empty
+    if(empty(trim($_POST["username"]))){
+        $username_err = 'Wpisz login.';
+    } else{
+        $username = trim($_POST["username"]);
+    }
+    
+    // Check if password is empty
+    if(empty(trim($_POST['password']))){
+        $password_err = 'Wpisz hasło.';
+    } else{
+        $password = trim($_POST['password']);
+    }
+    
+    // Validate credentials
+    if(empty($username_err) && empty($password_err)){
+        // Prepare a select statement
+        $sql = "SELECT id, username, password FROM users WHERE username = ?";
+
+        if($stmt = mysqli_prepare($link, $sql)){
+            // Bind variables to the prepared statement as parameters
+            mysqli_stmt_bind_param($stmt, "s", $param_username);
+
+            // Set parameters
+            $param_username = $username;
+            
+            // Attempt to execute the prepared statement
+            if(mysqli_stmt_execute($stmt)){
+                // Store result
+                mysqli_stmt_store_result($stmt);
+                
+                // Check if username exists, if yes then verify password
+                if(mysqli_stmt_num_rows($stmt) == 1){                    
+                    // Bind result variables
+                    mysqli_stmt_bind_result($stmt, $id, $username, $hashed_password);
+                    if(mysqli_stmt_fetch($stmt)){
+                        if(password_verify($password, $hashed_password)){
+                            /* Password is correct, so start a new session and
+                            save the username to the session */
+                            session_start();
+                            
+                            // Store data in session variables
+                            $_SESSION["loggedin"] = true;
+                            $_SESSION["id"] = $id;
+                            $_SESSION["username"] = $username;                            
+                            
+                            // Redirect user to welcome page
+                            header("location: game.php");
+                        } else{
+                            // Display an error message if password is not valid
+                            $password_err = 'Złe hasło.';
+                        }
+                    }
+                } else{
+                    // Display an error message if username doesn't exist
+                    $username_err = 'Nie ma konta o tym loginie.';
+                }
+            } else{
+                echo "Wystąpił błąd. Spróbuj ponownie później.";
+            }
+        }
+        
+        // Close statement
+        mysqli_stmt_close($stmt);
+    }
+    
+    // Close connection
+    mysqli_close($link);
+}
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="style.css">
+    <link rel="shortcut icon" href="images/favicon.ico" />
     <title>Way To Fortune</title>
 </head>
 <body>
-    <h1>Way To Fortune</h1>
-    by GajdaD
+    <div id="large_view">
+        <header>
+            <div id="title_png">
+                <span style="display: inline-block;height: 100%;vertical-align: middle"></span><img src="images/title.png" alt="Error" style="vertical-align: middle;width:60%;height:70%;">
+            </div>
+        </header>
+        <div id="border_horizontal"></div>
+        <main>
+            <div id="div_login">
+                <div id="div_guest">
+                    <p class="font_5" style="font-weight:bold">Graj jako gość</p>
+                    <br>
+                    <br>
+                    <p class="font_2">Jeśli nie chcesz zakładać konta<br> możesz skorzystać z publicznego konta.</p>
+                    <br>
+                    <p class="font_2">Login : <b>guest1</b></p>
+                    <p class="font_2">Hasło : <b>guest1</b></p>
+                </div>
+                <div id="border_vertical"></div>
+                <div id="div_log_reg">
+                    <p class="font_5" style="text-align:center;font-weight:bold">Zaloguj się</p>
+                    <br>
+                    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" style="text-align:center;width:100%">
+                        <p class="font_2" style="text-align:center;text-align:left;margin-left:10%">Login </p>
+                        <input class="login_input" type="text" name="username" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="<?php echo $username; ?>"><br>
+                        <p style="font-size:1em;color:red"><?php echo $username_err; ?></p>
+                        <br>
+                        <p class="font_2" style="text-align:center;text-align:left;margin-left:10%">Hasło </p>
+                        <input class="login_input" type="password" name="password"><br>
+                        <p style="font-size:1em;color:red"><?php echo $password_err; ?></p>
+                        <br>        
+                        <input type="submit" value="ZALOGUJ" class="login_submit">
+                    </form>
+                    <br>
+                    <p class="font_2" style="text-align:center">Nie masz konta? Zarejestruj się </p>
+                    <br>
+                    <div style="text-align:center">
+                    <input type="submit" value="REJESTRACJA" class="login_submit" onclick="window.location='register.php'">    
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
 </body>
 </html>
