@@ -106,6 +106,7 @@ mysqli_close($link);
             }
             $("#spin").click(function(){
                 if(active!=0){
+                    $("#spin").prop("onclick", null).off("click");
                     $.ajax({
                         url:'spin.php',
                         method:'POST',
@@ -114,7 +115,6 @@ mysqli_close($link);
                             stake:active,
                         },
                         success:function(response){
-                            $("#spin").prop("onclick", null).off("click");
                             $("#spin").css("background-color","#6E8387");
                             $("#spin").css("cursor","default");
                             var rotate = (-1 * response) - 360 ;
