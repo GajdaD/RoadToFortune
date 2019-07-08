@@ -75,6 +75,7 @@ mysqli_close($link);
                     });
             });
             $("#coin_lvlup").click(function(){
+                $("#coin_lvlup").prop("onclick", null).off("click");
                 $.ajax({
                         url:'coin_lvlup.php',
                         method:'POST',
